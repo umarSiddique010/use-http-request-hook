@@ -1,0 +1,54 @@
+{
+  "name": "@mdus/use-http-request-hook",
+  "version": "1.0.1",
+  "description": "A production-ready React hook for making HTTP requests with built-in GET caching, debounce support, waterfall protection, and AbortController cancellation.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "react-hook",
+    "useHttp",
+    "http",
+    "fetch",
+    "custom-hook",
+    "data-fetching",
+    "api-calls",
+    "rest-api",
+    "http-client",
+    "cache",
+    "debounce",
+    "AbortController",
+    "waterfall-protection",
+    "inflight-cache",
+    "frontend-utility",
+    "react-abstractions",
+    "get-post-put-delete"
+  ],
+  "author": "Md Umar Siddique",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/umarSiddique010/use-http-request-hook"
+  },
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "rollup": "^2.79.2",
+    "rollup-plugin-terser": "^7.0.2"
+  }
+}
