@@ -1,6 +1,6 @@
 {
   "name": "@mdus/use-http-request-hook",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A production-ready React hook for making HTTP requests with built-in GET caching, debounce support, waterfall protection, and AbortController cancellation.",
   "main": "dist/index.js",
   "module": "dist/index.js",
