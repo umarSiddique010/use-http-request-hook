@@ -1,248 +1,174 @@
-# useHttpRequest
+# <img src="./assets/icon.ico" height="45" align="top"> @mdus/use-http-request-hook
 
-A lightweight, production-ready React hook for making HTTP requests — with:
+![npm version](https://img.shields.io/npm/v/@mdus/use-http-request-hook?style=flat-square)
+![React Version](https://img.shields.io/npm/dependency-version/@mdus/use-http-request-hook/peer/react?style=flat-square)
+![License](https://img.shields.io/npm/l/@mdus/use-http-request-hook?style=flat-square)
 
-- ✅ Built-in **GET request caching**
-- ✅ **Waterfall protection** for shared concurrent requests
-- ✅ Native **AbortController** handling
-- ✅ Optional **debounce** delay
-- ✅ Easy **refetch** and **manual cache invalidation**
-- ✅ Zero dependencies — just `fetch` and idiomatic React
+**A production-ready React hook for making HTTP requests with built-in caching, debounce, waterfall protection, and AbortController.**
 
----
-
-## Why Use This Hook?
-
-> No more boilerplate, stale fetches, or duplicate network calls.
-
-`useHttpRequest` is for React developers who want:
-- Clean async logic without `useEffect` gymnastics
-- Reliable loading/error/data state without manual tracking
-- Built-in **caching** and **request deduplication** (waterfall protection)
-- Auto-abort behavior to prevent memory leaks
-- Full support for `GET`, `POST`, `PUT`, `DELETE`, and custom configs
-
-**Perfect for:**
-- Fetching data on mount
-- Debounced APIs (e.g., search/autocomplete)
-- Avoiding redundant GET calls in multiple components
-- Keeping UI state clean, responsive, and React-idiomatic
+This lightweight hook abstracts away the complexity of `fetch`, providing a robust solution for data fetching that handles race conditions, duplicates, and component unmounting automatically.
 
 ---
 
-## What Is This?
+## ✨ Features
 
-`useHttpRequest()` is a custom React hook that simplifies `fetch()` logic inside functional components.
-
-It handles:
-- What to fetch (`url`)
-- How to fetch (method, headers, body)
-- When to fetch (with debounce and cleanup)
-- What to do with the result (`data`, `error`, `isLoading`)
-
-You use it like this:
-
-```js
-const { data, error, isLoading, refetch } = useHttpRequest(url, options);
-```
+- **✅ Universal HTTP Support:** Handles `GET`, `POST`, `PUT`, `DELETE` and others. Automatically serializes JSON bodies and sets `Content-Type`.
+- **⚡ Smart Caching:** Built-in LRU (Least Recently Used) caching strategy (max 100 entries) for `GET` requests to minimize network load.
+- **🛡️ Waterfall Protection:** Implements request deduplication. If two components request the same URL simultaneously, only one network request is fired.
+- **🛑 Auto-Cancellation:** Uses `AbortController` to automatically cancel in-flight requests when the component unmounts, preventing "state update on unmounted component" errors.
+- **⏱️ Debounce Support:** Built-in debounce capability, making it perfect for search inputs and dynamic filters.
 
 ---
 
-## Installation
+## 📦 Installation
 
 ```bash
+# npm
 npm install @mdus/use-http-request-hook
-# or
+
+# yarn
 yarn add @mdus/use-http-request-hook
+
+# pnpm
+pnpm add @mdus/use-http-request-hook
 ```
 
 ---
 
-## API Reference
+## 💻 Quick Start
 
-### What It Expects
+### 1. Basic GET Request
 
-| Argument  | Type     | Required | Description                                 |
-| --------- | -------- | -------- | ------------------------------------------- |
-| `url`     | `string` | ✅ Yes    | The URL or endpoint to fetch data from      |
-| `options` | `object` | ❌ No     | An optional object to configure the request |
-
-### What Goes Inside `options`
-
-| Option     | Type     | Default | Description                                               |
-| ---------- | -------- | ------- | --------------------------------------------------------- |
-| `method`   | `string` | `"GET"` | HTTP method (`"GET"`, `"POST"`, `"PUT"`, `"DELETE"` etc.) |
-| `headers`  | `object` | `{}`    | Any custom headers (`Content-Type`, auth tokens, etc.)    |
-| `body`     | `object` | `null`  | Payload for non-GET requests (automatically stringified)  |
-| `debounce` | `number` | `0`     | Delay in milliseconds before the request is sent          |
-
-### What It Returns
-
-| Key         | Type       | Description                                          |
-| ----------- | ---------- | ---------------------------------------------------- |
-| `data`      | `any`      | The JSON response from the API (or `null` initially) |
-| `isLoading` | `boolean`  | `true` while request is in progress                  |
-| `error`     | `string`   | Error message if something goes wrong                |
-| `refetch`   | `function` | Manually re-trigger the request                      |
-
----
-
-## Examples
-
-### 1. Simple GET Request
+Fetch data effortlessly with automatic loading and error states.
 
 ```jsx
-import useHttpRequest from "@mdus/use-http-request-hook";
+import React from 'react';
+import useHttpRequest from '@mdus/use-http-request-hook';
 
-function Products() {
-  const { data, isLoading, error } = useHttpRequest("https://fakestoreapi.com/products");
+const UserProfile = ({ userId }) => {
+  const { data, isLoading, error } = useHttpRequest(
+    `https://jsonplaceholder.typicode.com/users/${userId}`,
+  );
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (isLoading) return <div className="spinner">Loading user...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!data) return null;
 
   return (
-    <ul>
-      {data?.map((item) => (
-        <li key={item.id}>{item.title}</li>
-      ))}
-    </ul>
+    <div className="card">
+      <h2>{data.name}</h2>
+      <p>Email: {data.email}</p>
+    </div>
   );
-}
+};
 ```
 
-### 2. POST Request with JSON Body
+### 2. POST/DELETE Requests & Options
+
+The hook supports complex configurations. Changing options (like `body`) triggers the request, or you can use `refetch` to trigger it manually.
 
 ```jsx
-const { data, error, isLoading } = useHttpRequest("https://api.example.com/users", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: {
-    name: "Alice",
-    email: "alice@example.com"
-  }
-});
-```
+import React, { useState } from 'react';
+import useHttpRequest from '@mdus/use-http-request-hook';
 
-### 3. Debounced GET Request (e.g., Search Input)
+const CreatePost = () => {
+  const [shouldCreate, setShouldCreate] = useState(false);
 
-```jsx
-const { data, isLoading } = useHttpRequest(`https://api.com/search?q=${query}`, {
-  debounce: 500 // Waits 500ms after typing stops
-});
-```
+  // The hook runs when 'url' is provided.
+  // We pass null initially to prevent execution until ready.
+  const { data, isLoading, error } = useHttpRequest(
+    shouldCreate ? 'https://jsonplaceholder.typicode.com/posts' : null,
+    {
+      method: 'POST',
+      body: {
+        title: 'foo',
+        body: 'bar',
+        userId: 1,
+      },
+      headers: {
+        Authorization: 'Bearer my-token',
+      },
+    },
+  );
 
-### 4. Manual Refetch
+  return (
+    <div>
+      <button onClick={() => setShouldCreate(true)} disabled={isLoading}>
+        {isLoading ? 'Creating...' : 'Create Post'}
+      </button>
 
-```jsx
-const { data, refetch } = useHttpRequest("https://api.com/stats");
+      {error && <p style={{ color: 'red' }}>Failed: {error}</p>}
 
-<button onClick={refetch}>Refresh Data</button>
-```
-
----
-
-## Advanced Features
-
-### GET Caching
-
-* Only `GET` requests are cached by default
-* Cached in memory (not persisted to disk)
-* Avoids repeat requests during a session
-
-```js
-// Will use cache if already fetched:
-useHttpRequest("https://api.com/items");
-```
-
-### Waterfall Protection
-
-Multiple components requesting the **same GET URL** won't duplicate the request:
-
-```jsx
-// Component A
-useHttpRequest("https://api.com/profile");
-
-// Component B  
-useHttpRequest("https://api.com/profile");
-
-// ✅ Only one fetch will actually run — both use same in-flight promise
-```
-
-### Manual Cache Control
-
-```js
-import { clearCache, invalidateURL } from "@mdus/use-http-request-hook";
-
-clearCache(); // Wipe all cached GET responses
-invalidateURL("https://api.com/products"); // Clear just one
+      {data && <div style={{ color: 'green' }}>Created Post ID: {data.id}</div>}
+    </div>
+  );
+};
 ```
 
 ---
 
-## How It Works (Beginner-Friendly Flow)
+## 📖 API Reference
 
-1. You call `useHttpRequest(url, options)`
-2. The hook checks if this is a `GET` request and already cached
-3. If not cached, it creates a `fetch()` request with `AbortController`
-4. While the request is in progress, `isLoading` is `true`
-5. If successful, `data` is filled and cached (for `GET` only)
-6. If there's an error, it shows up in `error`
-7. If component unmounts or URL changes, the request is safely aborted
+### `useHttpRequest(url, options)`
 
-### Auto Cleanup
+#### Arguments
 
-* Cancels in-progress requests if:
-  * Component unmounts
-  * URL or `options` change
-* Prevents memory leaks or setting state on an unmounted component
+| Argument  | Type               | Description                                                  |
+| :-------- | :----------------- | :----------------------------------------------------------- |
+| `url`     | `string` \| `null` | The API endpoint URL. Pass `null` to pause/skip the request. |
+| `options` | `object`           | (Optional) Configuration object for the request.             |
 
----
+#### Options Object
 
-## How It Works Internally
+| Property   | Default | Description                                                                                           |
+| :--------- | :------ | :---------------------------------------------------------------------------------------------------- |
+| `method`   | `'GET'` | HTTP method (`GET`, `POST`, `PUT`, `DELETE`, etc.).                                                   |
+| `headers`  | `{}`    | Custom request headers. `Content-Type: application/json` is added automatically if a body is present. |
+| `body`     | `null`  | Request body. If provided, it is automatically stringified.                                           |
+| `debounce` | `0`     | Delay in milliseconds before executing the request. Useful for search inputs.                         |
 
-* Uses native `fetch()` with `AbortController` for safety
-* `GET` responses cached in a `Map` (session memory)
-* In-flight GET requests tracked in another `Map` to prevent waterfall issues
-* Uses `setTimeout` for debouncing and cleans up on unmount
-* React `useRef`, `useCallback`, and `useMemo` ensure stability across renders
+#### Return Values
 
----
+| Property    | Type               | Description                                                               |
+| :---------- | :----------------- | :------------------------------------------------------------------------ |
+| `data`      | `any`              | The parsed JSON response from the API. `null` until loaded.               |
+| `error`     | `string` \| `null` | Error message if the request fails (network error or non-200 status).     |
+| `isLoading` | `boolean`          | `true` while the request is in flight or debouncing.                      |
+| `refetch`   | `function`         | Function to manually trigger the request again using the current options. |
 
-## File Structure
+### Global Utilities
 
+The package exports utility functions to manage the internal cache.
+
+```javascript
+import { clearCache, invalidateURL } from '@mdus/use-http-request-hook';
+
+// Clear the entire internal cache
+clearCache();
+
+// Remove a specific URL from the cache and in-flight tracking
+invalidateURL('https://api.example.com/users/1');
 ```
-use-http-request-hook/
-├── src/
-│   └── useHttpRequest.js
-├── dist/
-│   └── index.js
-├── package.json
-└── README.md
-```
 
 ---
 
-## Author
+## 🛠 Under the Hood
 
-**Md Umar Siddique**
+### 🚀 In-Flight Deduplication
 
-* GitHub: [@umarSiddique010](https://github.com/umarSiddique010)
-* LinkedIn: [md-umar-siddique](https://linkedin.com/in/md-umar-siddique)
-* X / Twitter: [@umarSiddique010](https://x.com/umarSiddique010)
-* Dev.to: [@umarSiddique010](https://dev.to/umarsiddique010)
+To prevent "waterfalls" or double-fetching, this library maintains a global `inFlightMap`. If Component A requests `/api/user/1` and Component B requests `/api/user/1` while the first is still pending, **only one network call is made**. Both components subscribe to the same promise.
 
----
+### 🧹 Auto-Cleanup
 
-## License
-
-MIT © 2025 Md Umar Siddique
+Every request generates an `AbortController`. If the component unmounts or the `url` changes before the request completes, the `abort()` signal is fired. This ensures your application stays performant and avoids memory leaks from stale asynchronous operations.
 
 ---
 
-## Final Note
-
-This hook is designed to solve **real problems** React developers face every day — while staying small, composable, and dependency-free. It's a reflection of production-level thinking: eliminating duplication, managing edge cases, and creating a smoother dev experience.
-
-If it helps you, feel free to star, use, and share.
+<div align="center">
+  <p><strong>Developed with ❤️ by Md Umar Siddique</strong></p>
+  <a href="https://www.linkedin.com/in/md-umar-siddique-1519b12a4/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+  <a href="https://www.npmjs.com/~umarSiddique010"><img src="https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white" alt="NPM" /></a>
+  <a href="https://dev.to/umarsiddique010"><img src="https://img.shields.io/badge/DEV.to-0A0A0A?style=for-the-badge&logo=dev.to&logoColor=white" alt="DEV Community" /></a>
+  <a href="https://github.com/umarSiddique010"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+  <a href="https://x.com/umarSiddique010"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>
+</div>
